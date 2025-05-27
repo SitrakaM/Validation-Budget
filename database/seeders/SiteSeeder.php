@@ -6,7 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Site; // Assure-toi que tu importes ton modèle
 
-class PosteSeeder extends Seeder
+class SiteSeeder extends Seeder
 {
     /**
      * Run the database seeds.

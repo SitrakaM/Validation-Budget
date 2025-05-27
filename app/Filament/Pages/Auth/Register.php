@@ -54,10 +54,11 @@ class Register extends BaseRegister
             ->searchable()
             ->preload()
             ->reactive()
+            ->required()
             ->afterStateUpdated(
                 function($state, \Filament\Forms\Set $set){
                     $poste = Poste::find($state);
-                    switch($poste->nomPoste){
+                    switch($poste?->nomPoste){
                         case 'Directeur': $set('role_id',2);
                         break;
                         case 'Manager_Operations': $set('role_id',3);
