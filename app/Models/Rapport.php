@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -79,12 +80,34 @@ class Rapport extends Model
 
     protected static function booted(){
         static::created(function($rapport){
-           
+            $user = Auth::user();
+            if (!$user || in_array($user->role->nomRole, ['Budget'])) {
+                return; // on ne fait rien si admin ou budget
+            }
             $validateurs = User::whereHas('role',fn($q)=>$q->whereIn('nomRole',['ValidateurRapport']))->get();
 
             foreach ($validateurs as $validateur) {
                 $rapport->userValidationRapport()->attach($validateur->id);
             }
+
+
+        });
+        static::updated(function($rapport){
+            $user = Auth::user();
+            if (!$user || in_array($user->role->nomRole, ['Budget'])) {
+                return; // on ne fait rien si admin ou budget
+            }
+
+            if ($rapport->wasChanged()) {
+                // On parcourt chaque enregistrement de la table pivot
+                foreach ($rapport->userValidationRapport as $validation) {
+                    if ($validation->pivot->estValid === 'revision') {
+                        $validation->pivot->estValid = 'changer';
+                        $validation->pivot->save();
+                    }
+                }
+            }
+            
 
 
         });
@@ -95,7 +118,9 @@ class Rapport extends Model
 
         $validateursOnValideAttente = $this->userValidationRapport()->where('estValid',['en_attente'])->count()===0;
         $validateursOnValideRevision = $this->userValidationRapport()->where('estValid',['revision'])->count()===0;
-        return $validateursOnValideAttente && $validateursOnValideRevision;
+        $validateursOnValideChanger = $this->userValidationRapport()->where('estValid',['changer'])->count()===0;
+
+        return $validateursOnValideAttente && $validateursOnValideRevision && $validateursOnValideChanger;
         ;
     }
  

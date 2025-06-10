@@ -2,9 +2,9 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\ValidationDemandeResource\Pages;
-use App\Filament\Resources\ValidationDemandeResource\RelationManagers;
-use App\Models\ValidationDemande;
+use App\Filament\Resources\ValidationRapportSuivieResource\Pages;
+use App\Filament\Resources\ValidationRapportSuivieResource\RelationManagers;
+use App\Models\ValidationRapport;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -12,20 +12,25 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Notifications\Notification;
 use Filament\Forms\Components\FileUpload;
 use Filament\Facades\Filament;
 
-class ValidationDemandeResource extends Resource
+
+class ValidationRapportSuivieResource extends Resource
 {
-    protected static ?string $model = ValidationDemande::class;
+    protected static ?string $model = ValidationRapport::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $label = 'Suivie rapport';
+    protected static ?string $pluralLabel = 'Suivie rapports';
+    protected static ?string $slug = 'Suivie rapport'; // ou un slug unique
+    
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-             
                 Forms\Components\TextInput::make('commentaire')
                     ->maxLength(255)
                     ->visible(
@@ -53,7 +58,7 @@ class ValidationDemandeResource extends Resource
                     ->panelLayout('grid')
                     ->multiple()
                     ->downloadable()
-                    ->directory('Revision/Demande')
+                    ->directory('Revision/Rapport')
                     ->visibility('public')
                     ->preserveFilenames()
                     ->required(
@@ -64,11 +69,9 @@ class ValidationDemandeResource extends Resource
                     ),
 
                 Forms\Components\Select::make('user_id')
-                    ->relationship('user', 'name')
-                    ->required(),
-                Forms\Components\Select::make('demande_id')
-                    ->relationship('demande', 'id')
-                    ->required(),
+                    ->relationship('user', 'name'),
+                Forms\Components\Select::make('rapport_id')
+                    ->relationship('rapport', 'id'),
             ]);
     }
 
@@ -79,7 +82,7 @@ class ValidationDemandeResource extends Resource
                 Tables\Columns\TextColumn::make('commentaire')
                     ->searchable(),
                 // Tables\Columns\IconColumn::make('estValid')
-                //     ->boolean(),
+                    // ->boolean(),
                 Tables\Columns\TextColumn::make('estValid')
                     ->icon(fn(string $state):string=>match($state){
                         'en_attente'=>'heroicon-o-clock',
@@ -98,7 +101,7 @@ class ValidationDemandeResource extends Resource
                 Tables\Columns\TextColumn::make('user.name')
                     ->numeric()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('demande.id')
+                Tables\Columns\TextColumn::make('rapport.id')
                     ->numeric()
                     ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
@@ -134,23 +137,29 @@ class ValidationDemandeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListValidationDemandes::route('/'),
-            'create' => Pages\CreateValidationDemande::route('/create'),
-            'view' => Pages\ViewValidationDemande::route('/{record}'),
-            'edit' => Pages\EditValidationDemande::route('/{record}/edit'),
+            'index' => Pages\ListValidationRapportSuivies::route('/'),
+            'create' => Pages\CreateValidationRapportSuivie::route('/create'),
+            'view' => Pages\ViewValidationRapportSuivie::route('/{record}'),
+            'edit' => Pages\EditValidationRapportSuivie::route('/{record}/edit'),
         ];
     }
+  
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
-
-        $query->where('user_id', auth()->id()); // suppose que tu stockes l'utilisateur qui a créé
+        if (auth()->user()->role?->nomRole === 'Simple') {
+            $query->whereHas('rapport', function ($q) {
+                $q->whereHas('demande', function ($r) {
+                    $r->where('user_id', auth()->id());
+                });
+            });       
+         }
         return $query;
     }
     public static function canAccess(): bool
     {
         $user = Filament::auth()->user();                   
 
-        return in_array($user->role?->nomRole, ['Admin', 'Validateur','ValidateurRapport']);
+        return in_array($user->role?->nomRole, ['Admin','ValidateurRapport','Simple']);
     }
 }

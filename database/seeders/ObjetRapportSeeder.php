@@ -16,6 +16,9 @@ class ObjetRapportSeeder extends Seeder
         ObjetRapport::insert([
             ['nomObjet' => 'Mission'],
             ['nomObjet' => 'Financière'],
+            ['nomObjet' => 'Voiture'],
+            ['nomObjet' => 'Autre'],
+
         ]);   
      }
 }

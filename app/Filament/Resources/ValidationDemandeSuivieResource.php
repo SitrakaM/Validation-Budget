@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\ValidationDemandeResource\Pages;
-use App\Filament\Resources\ValidationDemandeResource\RelationManagers;
+use App\Filament\Resources\ValidationDemandeSuivieResource\Pages;
+use App\Filament\Resources\ValidationDemandeSuivieResource\RelationManagers;
 use App\Models\ValidationDemande;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -15,11 +15,14 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\FileUpload;
 use Filament\Facades\Filament;
 
-class ValidationDemandeResource extends Resource
+class ValidationDemandeSuivieResource extends Resource
 {
     protected static ?string $model = ValidationDemande::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $label = 'Suivie demande';
+    protected static ?string $pluralLabel = 'Suivie demandes';
+    protected static ?string $slug = 'Suivie demande'; // ou un slug unique
 
     public static function form(Form $form): Form
     {
@@ -85,13 +88,16 @@ class ValidationDemandeResource extends Resource
                         'en_attente'=>'heroicon-o-clock',
                         'valide'=>'heroicon-o-check-circle',
                         'revision'=>'heroicon-o-pencil',
-                        'changer'=>'heroicon-o-wrench-screwdriver',                    })
+                        'changer'=>'heroicon-o-wrench-screwdriver',
+
+                    })
                     ->color(
                         fn(string $state):string=>match($state){
                             'en_attente'=>'gray',
                             'valide'=>'success',
                             'revision'=>'danger',
                             'changer'=>'info',
+
                         }
                     )
                     ->sortable(),
@@ -134,23 +140,28 @@ class ValidationDemandeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListValidationDemandes::route('/'),
-            'create' => Pages\CreateValidationDemande::route('/create'),
-            'view' => Pages\ViewValidationDemande::route('/{record}'),
-            'edit' => Pages\EditValidationDemande::route('/{record}/edit'),
+            'index' => Pages\ListValidationDemandeSuivies::route('/'),
+            'create' => Pages\CreateValidationDemandeSuivie::route('/create'),
+            'view' => Pages\ViewValidationDemandeSuivie::route('/{record}'),
+            'edit' => Pages\EditValidationDemandeSuivie::route('/{record}/edit'),
         ];
     }
     public static function getEloquentQuery(): Builder
     {
         $query = parent::getEloquentQuery();
 
-        $query->where('user_id', auth()->id()); // suppose que tu stockes l'utilisateur qui a créé
+        if (auth()->user()->role?->nomRole === 'Simple') {
+            $query->whereHas('demande', function ($q) {
+                $q->where('user_id', auth()->id());
+            });       
+         }
+
         return $query;
     }
     public static function canAccess(): bool
     {
         $user = Filament::auth()->user();                   
 
-        return in_array($user->role?->nomRole, ['Admin', 'Validateur','ValidateurRapport']);
+        return in_array($user->role?->nomRole, ['Admin', 'Validateur','ValidateurRapport','Simple']);
     }
 }

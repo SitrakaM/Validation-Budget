@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Notifications\Notification;
 use Filament\Forms\Components\FileUpload;
+use Filament\Facades\Filament;
 
 
 class ValidationRapportResource extends Resource
@@ -40,7 +41,12 @@ class ValidationRapportResource extends Resource
                     ->icons([
                         'valide'=>'heroicon-o-check-circle',
                         'revision'=>'heroicon-o-pencil',
-                    ])
+                    ])->colors(
+                        [                            
+                            'valide'=>'success',
+                            'revision'=>'danger',
+                        ]
+                    )
                     ->inline()
                     ->required()
                     ->live(),
@@ -78,12 +84,13 @@ class ValidationRapportResource extends Resource
                         'en_attente'=>'heroicon-o-clock',
                         'valide'=>'heroicon-o-check-circle',
                         'revision'=>'heroicon-o-pencil',
-                    })
+                        'changer'=>'heroicon-o-wrench-screwdriver',                    })
                     ->color(
                         fn(string $state):string=>match($state){
                             'en_attente'=>'gray',
                             'valide'=>'success',
-                            'revision'=>'info',
+                            'revision'=>'danger',
+                            'changer'=>'info',
                         }
                     )
                     ->sortable(),
@@ -137,11 +144,15 @@ class ValidationRapportResource extends Resource
     {
         $query = parent::getEloquentQuery();
 
-        if (auth()->user()->role?->nomRole === 'ValidateurRapport') {
             $query->where('user_id', auth()->id()); // suppose que tu stockes l'utilisateur qui a créé
-        }
 
         return $query;
+    }
+    public static function canAccess(): bool
+    {
+        $user = Filament::auth()->user();                   
+
+        return in_array($user->role?->nomRole, ['Admin','ValidateurRapport']);
     }
     
 }

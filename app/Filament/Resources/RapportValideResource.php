@@ -1,10 +1,9 @@
 <?php
 
 namespace App\Filament\Resources;
-use Illuminate\Support\Str;
 
-use App\Filament\Resources\RapportResource\Pages;
-use App\Filament\Resources\RapportResource\RelationManagers;
+use App\Filament\Resources\RapportValideResource\Pages;
+use App\Filament\Resources\RapportValideResource\RelationManagers;
 use App\Models\Rapport;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -23,11 +22,14 @@ use App\Models\Demande;
 use Filament\Facades\Filament;
 
 
-class RapportResource extends Resource
+class RapportValideResource extends Resource
 {
     protected static ?string $model = Rapport::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $label = 'Rapport valide';
+    protected static ?string $pluralLabel = 'Rapport valides';
+    protected static ?string $slug = 'Rapport valide'; // ou un slug unique
 
     public static function form(Form $form): Form
     {
@@ -41,7 +43,7 @@ class RapportResource extends Resource
                 Forms\Components\TextInput::make('statut')
                 ->hidden()
                 ->maxLength(255),
-                Forms\Components\Select::make('objet_demande_id')
+                Forms\Components\Select::make('objet_rapport_id')
                     ->relationship(name: 'ObjetRapport', titleAttribute: 'nomObjet')
                     ->label('Objet')
                     ->searchable()
@@ -61,14 +63,7 @@ class RapportResource extends Resource
                     ->downloadable()
                     ->directory('Rapport')
                     ->visibility('public')
-                    ->preserveFilenames()
-                    ->getUploadedFileNameForStorageUsing(function ($file) {
-                        $name = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-                        $extension = $file->getClientOriginalExtension();
-                        $timestamp = now()->format('Y-m-d_H-i-s');
-                
-                        return $name . '_' . $timestamp . '.' . $extension;
-                    }),
+                    ->preserveFilenames(),
               
             ]);
     }
@@ -95,7 +90,7 @@ class RapportResource extends Resource
                     }
                 )
                     ->searchable(),
-           
+               
                 Tables\Columns\TextColumn::make('objet_rapport_id')
                     ->numeric()
                     ->sortable(),
@@ -142,10 +137,10 @@ class RapportResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListRapports::route('/'),
-            'create' => Pages\CreateRapport::route('/create'),
-            'view' => Pages\ViewRapport::route('/{record}'),
-            'edit' => Pages\EditRapport::route('/{record}/edit'),
+            'index' => Pages\ListRapportValides::route('/'),
+            'create' => Pages\CreateRapportValide::route('/create'),
+            'view' => Pages\ViewRapportValide::route('/{record}'),
+            'edit' => Pages\EditRapportValide::route('/{record}/edit'),
         ];
     }
 
@@ -158,18 +153,19 @@ class RapportResource extends Resource
             $query->whereHas('demande', function ($q) {
                 $q->where('user_id', auth()->id());
             });       
-         }
-         $query->where('statut', 'en_attente');
+        }
+    
+        $query->where('statut', 'valide');
 
 
         return $query;
     }
 
+    
     public static function canAccess(): bool
     {
         $user = Filament::auth()->user();                   
 
-        return in_array($user->role?->nomRole, ['Admin','Simple']);
+        return in_array($user->role?->nomRole, ['Admin', 'Validateur','ValidateurRapport','Special','Simple','Budget']);
     }
-
 }

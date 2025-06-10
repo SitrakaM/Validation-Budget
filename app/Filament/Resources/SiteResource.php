@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Facades\Filament;
 
 class SiteResource extends Resource
 {
@@ -64,5 +65,11 @@ class SiteResource extends Resource
         return [
             'index' => Pages\ManageSites::route('/'),
         ];
+    }
+    public static function canAccess(): bool
+    {
+        $user = Filament::auth()->user();                   
+
+        return in_array($user->role?->nomRole, ['Admin']);
     }
 }

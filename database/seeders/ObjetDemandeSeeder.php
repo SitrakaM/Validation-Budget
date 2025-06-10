@@ -16,6 +16,9 @@ class ObjetDemandeSeeder extends Seeder
         ObjetDemande::insert([
             ['nomObjet' => 'Budget'],
             ['nomObjet' => 'Matériel'],
+            ['nomObjet' => 'Voiture'],
+            ['nomObjet' => 'Autre'],
+
         ]);   
      }
 }

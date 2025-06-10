@@ -82,6 +82,17 @@ class Demande extends Model
     protected static function booted(){
         static::updated(function($demande){
 
+            if ($demande->wasChanged()) {
+                // On parcourt chaque enregistrement de la table pivot
+                foreach ($demande->userValidationDemande as $validation) {
+                    if ($validation->pivot->estValid === 'revision') {
+                        $validation->pivot->estValid = 'changer';
+                        $validation->pivot->save();
+                    }
+                }
+            }
+            
+
             if($demande->wasChanged('statut') && $demande->statut === 'valide'){
                 $demande->userValidationDemande()->detach();
                 foreach($demande->rapport as $rapport){
@@ -91,7 +102,10 @@ class Demande extends Model
                     $rapport->userValidationRapport()->detach();
                 }
             }
-           
+
+
+            
+
         });
     }
 }

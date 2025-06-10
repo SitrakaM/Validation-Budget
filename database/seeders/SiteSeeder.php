@@ -14,6 +14,7 @@ class SiteSeeder extends Seeder
     public function run(): void
     {
         Site::insert([
+            ['nomSite' => 'Aucun'],
             ['nomSite' => 'MARIARANO'],
             ['nomSite' => 'MAROANTSETRA'],
             ['nomSite' => 'KAMOTRO'],

@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\DemandeResource\Pages;
-use App\Filament\Resources\DemandeResource\RelationManagers;
+use App\Filament\Resources\DemandeVoitureResource\Pages;
+use App\Filament\Resources\DemandeVoitureResource\RelationManagers;
 use App\Models\Demande;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -24,11 +24,15 @@ use Filament\Facades\Filament;
 
 
 
-class DemandeResource extends Resource
+class DemandeVoitureResource extends Resource
 {
     protected static ?string $model = Demande::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $label = 'Demande voiture';
+    protected static ?string $pluralLabel = 'Demande voitures';
+    protected static ?string $slug = 'Demande voiture'; // ou un slug unique
+
 
     public static function form(Form $form): Form
     {
@@ -37,6 +41,8 @@ class DemandeResource extends Resource
                 Forms\Components\TextInput::make('titre')
                     ->required()
                     ->dehydrateStateUsing(fn (string $state): string => ucwords($state))
+
+
                     ->maxLength(255),
                
                 Forms\Components\TextInput::make('statut')
@@ -45,21 +51,10 @@ class DemandeResource extends Resource
         
                 Forms\Components\Select::make('objet_demande_id')
                     ->relationship(name: 'ObjetDemande', titleAttribute: 'nomObjet')
+                    ->default(3)
+                    // ->disabled() // on ne veut pas que l'utilisateur le modifie
                     ->label('Objet')
-                    ->options(function () {
-                        $user = auth()->user();
-                
-                        // Rôles autorisés à voir "Voiture"
-                        $canSeeVoiture = in_array(strtolower($user->role?->nomRole), ['Admin', 'Budget']);
-                
-                        return \App\Models\ObjetDemande::query()
-                            ->when(!$canSeeVoiture, function ($query) {
-                                $query->where('nomObjet', '!=', 'Voiture');
-                            })
-                            ->pluck('nomObjet', 'id');
-                    })
                     ->searchable()
-                    ->required()
                     ->preload(), 
                 Forms\Components\Hidden::make('user_id')
                     ->default(auth()->id())
@@ -93,23 +88,18 @@ class DemandeResource extends Resource
                         Forms\Components\TextInput::make('statut')
                             ->hidden()
                             ->maxLength(255),   
-                        Forms\Components\Select::make('objet_rapport_id')
+                        // Forms\Components\Select::make('objet_rapport_id')
+                        //     ->relationship(name: 'ObjetRapport', titleAttribute: 'nomObjet')
+                        //     ->label('Objet')
+                        //     ->searchable()
+                        //     ->preload(), 
+                            Forms\Components\Select::make('objet_rapport_id')
                             ->relationship(name: 'ObjetRapport', titleAttribute: 'nomObjet')
+                            ->default(3)
+                            // ->disabled() // on ne veut pas que l'utilisateur le modifie
                             ->label('Objet')
-                            ->options(function () {
-                                $user = auth()->user();
-                        
-                                // Rôles autorisés à voir "Voiture"
-                                $canSeeVoiture = in_array(strtolower($user->role?->nomRole), ['Admin', 'Budget']);
-                        
-                                return \App\Models\ObjetDemande::query()
-                                    ->when(!$canSeeVoiture, function ($query) {
-                                        $query->where('nomObjet', '!=', 'Voiture');
-                                    })
-                                    ->pluck('nomObjet', 'id');
-                            })
                             ->searchable()
-                            ->preload(), 
+                            ->preload(),            
                       
                         Forms\Components\Hidden::make('demande_id')
                             ->dehydrated(true),
@@ -226,10 +216,10 @@ class DemandeResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListDemandes::route('/'),
-            'create' => Pages\CreateDemande::route('/create'),
-            'view' => Pages\ViewDemande::route('/{record}'),
-            'edit' => Pages\EditDemande::route('/{record}/edit'),
+            'index' => Pages\ListDemandeVoitures::route('/'),
+            'create' => Pages\CreateDemandeVoiture::route('/create'),
+            'view' => Pages\ViewDemandeVoiture::route('/{record}'),
+            'edit' => Pages\EditDemandeVoiture::route('/{record}/edit'),
         ];
     }
    
@@ -240,11 +230,10 @@ class DemandeResource extends Resource
         if (auth()->user()->role?->nomRole === 'Simple') {
             $query->where('user_id', auth()->id()); // suppose que tu stockes l'utilisateur qui a créé
         }
-
-        $query?->where('statut', 'en_attente');
-        $query->whereNot('objet_demande_id', 3);
-
-
+        $query->where('objet_demande_id', 3);
+        // $query->whereHas('ObjetDemande', function ($q) {
+        //     $q->where('nomObjet', 'Voiture');
+        // });
 
         return $query;
     }
@@ -253,7 +242,7 @@ class DemandeResource extends Resource
     {
         $user = Filament::auth()->user();                   
 
-        return in_array($user->role?->nomRole, ['Admin','Special','Simple']);
+        return in_array($user->role?->nomRole, ['Admin','Special','Budget']);
     }
 
    

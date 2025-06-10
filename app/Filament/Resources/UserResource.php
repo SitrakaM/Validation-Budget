@@ -14,6 +14,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Facades\Filament;
 
 class UserResource extends Resource
 {
@@ -115,7 +116,13 @@ class UserResource extends Resource
             'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
+    
+    public static function canAccess(): bool
+    {
+        $user = Filament::auth()->user();                   
 
+        return in_array($user->role?->nomRole, ['Admin']);
+    }
  
 
 }

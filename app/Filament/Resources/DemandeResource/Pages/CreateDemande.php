@@ -16,7 +16,7 @@ class CreateDemande extends CreateRecord
 
     protected function afterCreate(): void
     {
-        $validateurs = User::whereHas('role',fn($q)=>$q->whereIn('nomRole',['Validateur','Special','ValidateurRapport']))->get();
+        $validateurs = User::whereHas('role',fn($q)=>$q->whereIn('nomRole',['Validateur','ValidateurRapport']))->get();
         foreach ($validateurs as $validateur) {
             $this->record->userValidationDemande()->attach($validateur->id);
         }

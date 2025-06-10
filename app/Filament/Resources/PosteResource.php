@@ -12,6 +12,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Filament\Facades\Filament;
 
 class PosteResource extends Resource
 {
@@ -64,5 +65,11 @@ class PosteResource extends Resource
         return [
             'index' => Pages\ManagePostes::route('/'),
         ];
+    }
+    public static function canAccess(): bool
+    {
+        $user = Filament::auth()->user();                   
+
+        return in_array($user->role?->nomRole, ['Admin']);
     }
 }
