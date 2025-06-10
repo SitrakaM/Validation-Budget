@@ -1,0 +1,12 @@
+<VirtualHost *:80>
+    ServerName monapp.local
+    DocumentRoot /var/www/monapp/public
+
+    <Directory /var/www/monapp/public>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/monapp_error.log
+    CustomLog ${APACHE_LOG_DIR}/monapp_access.log combined
+</VirtualHost>
