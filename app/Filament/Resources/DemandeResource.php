@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Actions\Action;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Auth;
 
 
 
@@ -29,117 +30,185 @@ class DemandeResource extends Resource
     protected static ?string $model = Demande::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $label = 'Demande';
+    protected static ?string $pluralLabel = 'Demande';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
-                Forms\Components\TextInput::make('titre')
-                    ->required()
-                    ->dehydrateStateUsing(fn (string $state): string => ucwords($state))
-                    ->maxLength(255),
-               
-                Forms\Components\TextInput::make('statut')
-                    ->hidden()
-                    ->maxLength(255),
-        
+
+
+
+    
+            Forms\Components\Section::make('DEMANDE')
+            ->schema([
+
+
                 Forms\Components\Select::make('objet_demande_id')
-                    ->relationship(name: 'ObjetDemande', titleAttribute: 'nomObjet')
-                    ->label('Objet')
-                    ->options(function () {
-                        $user = auth()->user();
+                ->relationship(name: 'ObjetDemande', titleAttribute: 'nomObjet')
+                ->label('Objet')
+                ->options(function () {
+                    $user = auth()->user();
+            
+                    // Rôles autorisés à voir "Voiture"
+                    $canSeeVoiture = in_array(strtolower($user->role?->nomRole), ['Admin', 'Budget']);
+            
+                    return \App\Models\ObjetDemande::query()
+                        ->when(!$canSeeVoiture, function ($query) {
+                            $query->where('nomObjet', '!=', 'Voiture');
+                        })
+                        ->pluck('nomObjet', 'id');
+                })
+                ->default(1)
+                ->searchable()
+                ->required()
+                ->preload(), 
+            Forms\Components\TextInput::make('titre')
+                ->required()
+                ->dehydrateStateUsing(fn (string $state): string => ucwords($state))
+                ->maxLength(255),
+            Forms\Components\Select::make('site')
+                ->relationship(titleAttribute: 'nomSite')
+                ->options(
+                    function (){
+                        return auth()->user()->site()->pluck('nomSite','id');  
+                    }
+                )
+                ->required()
+                ->preload(),
+            Forms\Components\Select::make('activite_id')
+                ->relationship(name: 'Activite', titleAttribute: 'nomActivite')
+                ->label('Activité')
+                ->default(1)
+                ->searchable()
+                ->preload(), 
+
+            FileUpload::make('url')
+                ->label('Joindre une fichier')
+                ->downloadable()
+                ->directory('Demande')
+                ->visibility('public')
+                ->preserveFilenames()
+                ->columnSpanFull()
+                ->required()
+                ,
+            
+            Forms\Components\Hidden::make('user_id')
+                ->default(auth()->id())
+                ->dehydrated(true),
                 
-                        // Rôles autorisés à voir "Voiture"
-                        $canSeeVoiture = in_array(strtolower($user->role?->nomRole), ['Admin', 'Budget']);
-                
-                        return \App\Models\ObjetDemande::query()
-                            ->when(!$canSeeVoiture, function ($query) {
-                                $query->where('nomObjet', '!=', 'Voiture');
-                            })
-                            ->pluck('nomObjet', 'id');
-                    })
-                    ->searchable()
-                    ->required()
-                    ->preload(), 
-                Forms\Components\Hidden::make('user_id')
-                    ->default(auth()->id())
-                    ->dehydrated(true),
-                    
-                Forms\Components\Select::make('activite_id')
-                    ->relationship(name: 'Activite', titleAttribute: 'nomActivite')
-                    ->label('Activité')
-                    ->searchable()
-                    ->preload(), 
-                Forms\Components\Select::make('site')
-                    // ->multiple()
-                    ->relationship(titleAttribute: 'nomSite')
-                    ->options(
-                        function (){
-                            return auth()->user()->site()->pluck('nomSite','id');  
-                        }
-                    )
-                    ->preload(),
-                FileUpload::make('url')
-                    ->downloadable()
-                    ->directory('Demande')
-                    ->visibility('public')
-                    ->preserveFilenames(),
+
+            ])
+            ->disabled(fn () => in_array(Auth::user()?->role->nomRole,['Special','Budget','Validateur','ValidateurRapport']))
+            ->columns(2),
+               
+            
                 HasManyRepeater::make('rapport')
-                    ->relationship('rapport')
-                    ->schema([
-                        Forms\Components\TextInput::make('titre')
-                            ->required()
-                            ->maxLength(255),
-                        Forms\Components\TextInput::make('statut')
-                            ->hidden()
-                            ->maxLength(255),   
-                        Forms\Components\Select::make('objet_rapport_id')
-                            ->relationship(name: 'ObjetRapport', titleAttribute: 'nomObjet')
-                            ->label('Objet')
-                            ->options(function () {
-                                $user = auth()->user();
-                        
-                                // Rôles autorisés à voir "Voiture"
-                                $canSeeVoiture = in_array(strtolower($user->role?->nomRole), ['Admin', 'Budget']);
-                        
-                                return \App\Models\ObjetDemande::query()
-                                    ->when(!$canSeeVoiture, function ($query) {
-                                        $query->where('nomObjet', '!=', 'Voiture');
-                                    })
-                                    ->pluck('nomObjet', 'id');
-                            })
-                            ->searchable()
-                            ->preload(), 
-                      
-                        Forms\Components\Hidden::make('demande_id')
-                            ->dehydrated(true),
+                ->label('ATTACHEMENT DES RAPPORTS')
+                ->relationship('rapport')
+                ->schema([
+                    Forms\Components\Select::make('objet_rapport_id')
+                        ->relationship(name: 'ObjetRapport', titleAttribute: 'nomObjet')
+                        ->label('Objet')
+                        ->options(function () {
+                            $user = auth()->user();
+                            $canSeeVoiture = in_array(strtolower($user->role?->nomRole), ['Admin', 'Budget']);
+                            return \App\Models\ObjetRapport::query()
+                                ->when(!$canSeeVoiture, function ($query) {
+                                    $query->where('nomObjet', '!=', 'Voiture');
+                                })
+                                ->pluck('nomObjet', 'id');
+                        })
+                        ->default(1)
+                        ->required()
+                        ->searchable()
+                        ->preload(), 
+                    Forms\Components\TextInput::make('titre')
+                        ->required()
+                        ->maxLength(255),
                         Forms\Components\Select::make('site')
-                            // ->multiple()
-                            ->relationship(titleAttribute: 'nomSite')
-                            ->options(
-                                function (){
-                                    return auth()->user()->site()->pluck('nomSite','id');  
-                                }
-                            )
-                            ->preload(),
+                        // ->multiple()
+                        ->relationship(titleAttribute: 'nomSite')
+                        ->options(
+                            function (){
+                                return auth()->user()->site()->pluck('nomSite','id');  
+                            }
+                        )                        
+                        ->required()
+                        ->preload(),
+                
+                    Forms\Components\Select::make('activite_id')
+                        ->relationship(name: 'Activite', titleAttribute: 'nomActivite')
+                        ->label('Activité')
+                        ->searchable()
+                        ->default(1)
+                        ->preload(), 
+                    FileUpload::make('url')
+                        ->label('Joindre des fichiers')
+                        ->panelLayout('grid')
+                        ->multiple()
+                        ->downloadable()
+                        ->directory('Rapport')
+                        ->visibility('public')
+                        ->preserveFilenames()
+                        ->required()
+                        ->columnSpanFull(),
+                    Forms\Components\TextInput::make('statut')
+                        ->hidden()
+                        ->maxLength(255),   
+                   
+                  
+                    Forms\Components\Hidden::make('demande_id')
+                        ->dehydrated(true),
                     
-                        Forms\Components\Select::make('activite_id')
-                            ->relationship(name: 'Activite', titleAttribute: 'nomActivite')
-                            ->label('Activité')
-                            ->searchable()
-                            ->preload(), 
-                        FileUpload::make('url')
-                            ->panelLayout('grid')
-                            ->multiple()
-                            ->downloadable()
-                            ->directory('Rapport')
-                            ->visibility('public')
-                            ->preserveFilenames(),
+                    
+                ])
+                ->disabled(fn () => in_array(Auth::user()?->role->nomRole,['Special','Budget','Validateur','ValidateurRapport']))
+                ->columns(2)
+                ->columnSpanFull()
+                ->createItemButtonLabel('Ajouter un rapport'),
+          
+                
+            Forms\Components\Section::make('VALIDATION SPECIAL')
+                ->schema([
+
+
+                    Forms\Components\ToggleButtons::make('statut')
+                    ->options([
+                        'valide'=>'valide',
                     ])
-                    
-                    ->createItemButtonLabel('Ajouter un rapport'),
-              
-            ]);
+                    ->icons([
+                        'valide'=>'heroicon-o-check-circle',
+                    ])->colors(
+                        [                            
+                            'valide'=>'success',
+                        ]
+                    )
+                    ->inline()
+                    ->required()
+                    ->visible(fn () => in_array(Auth::user()?->role->nomRole,['Special']))
+                    ->live()
+                    ->columnSpanFull(),
+                FileUpload::make('motifSpecial')
+                    ->downloadable()
+                    ->directory('Revision/Demande')
+                    ->visibility('public')
+                    ->preserveFilenames()
+                    ->required(
+                        fn(Callable $get)=>$get('statut') ==='valide'
+                    )
+                    ->visible(
+                        fn(Callable $get)=>$get('statut') ==='valide'
+                    ),
+                
+                ])->visible(fn () => in_array(Auth::user()?->role->nomRole,['Special']))
+                ,
+
+                
+                
+                
+        ]);
     }
 
     public static function table(Table $table): Table

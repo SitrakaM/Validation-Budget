@@ -20,6 +20,7 @@ use Illuminate\Support\Facades\Storage;
 use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Actions\Action;
 use Filament\Facades\Filament;
+use Illuminate\Support\Facades\Auth;
 
 
 
@@ -41,39 +42,63 @@ class DemandeVoitureResource extends Resource
                 Forms\Components\TextInput::make('titre')
                     ->required()
                     ->dehydrateStateUsing(fn (string $state): string => ucwords($state))
-
-
                     ->maxLength(255),
                
-                Forms\Components\TextInput::make('statut')
-                    ->hidden()
-                    ->maxLength(255),
+                // Forms\Components\TextInput::make('statut')
+                //     // ->hidden()
+                //     ->visible(fn () => in_array(Auth::user()?->role->nomRole,['Special']))
+                //     ->maxLength(255),
         
                 Forms\Components\Select::make('objet_demande_id')
                     ->relationship(name: 'ObjetDemande', titleAttribute: 'nomObjet')
                     ->default(3)
-                    // ->disabled() // on ne veut pas que l'utilisateur le modifie
+                    ->disabled() // on ne veut pas que l'utilisateur le modifie
                     ->label('Objet')
                     ->searchable()
-                    ->preload(), 
+                    ->preload()
+                    ->dehydrated(true),
+
+                Forms\Components\TextInput::make('voitureCommentaire')
+                    ->maxLength(255)
+                    ->visible(
+                        fn(Callable $get)=>$get('statut') ==='revision'
+                    )
+                    ->live(),
+                Forms\Components\ToggleButtons::make('statut')
+                    ->options([
+                        'valide'=>'valide',
+                        'revision'=>'revision'
+                    ])
+                    ->icons([
+                        'valide'=>'heroicon-o-check-circle',
+                        'revision'=>'heroicon-o-pencil',
+                    ])->colors(
+                        [                            
+                            'valide'=>'success',
+                            'revision'=>'danger',
+                        ]
+                    )
+                    ->inline()
+                    ->required()
+                    ->visible(fn () => in_array(Auth::user()?->role->nomRole,['Special']))
+                    ->live(),
+                FileUpload::make('motifVoitureRevision')
+                    ->downloadable()
+                    ->directory('Revision/Demande')
+                    ->visibility('public')
+                    ->preserveFilenames()
+                    ->required(
+                        fn(Callable $get)=>$get('statut') ==='revision' && empty($get('voitureCommentaire'))
+                    )
+                    ->visible(
+                        fn(Callable $get)=>$get('statut') ==='revision'
+                    ),
+
+ 
                 Forms\Components\Hidden::make('user_id')
                     ->default(auth()->id())
                     ->dehydrated(true),
-                    
-                Forms\Components\Select::make('activite_id')
-                    ->relationship(name: 'Activite', titleAttribute: 'nomActivite')
-                    ->label('Activité')
-                    ->searchable()
-                    ->preload(), 
-                Forms\Components\Select::make('site')
-                    // ->multiple()
-                    ->relationship(titleAttribute: 'nomSite')
-                    ->options(
-                        function (){
-                            return auth()->user()->site()->pluck('nomSite','id');  
-                        }
-                    )
-                    ->preload(),
+               
                 FileUpload::make('url')
                     ->downloadable()
                     ->directory('Demande')
@@ -87,37 +112,20 @@ class DemandeVoitureResource extends Resource
                             ->maxLength(255),
                         Forms\Components\TextInput::make('statut')
                             ->hidden()
-                            ->maxLength(255),   
-                        // Forms\Components\Select::make('objet_rapport_id')
-                        //     ->relationship(name: 'ObjetRapport', titleAttribute: 'nomObjet')
-                        //     ->label('Objet')
-                        //     ->searchable()
-                        //     ->preload(), 
+                            ->maxLength(255),  
                             Forms\Components\Select::make('objet_rapport_id')
                             ->relationship(name: 'ObjetRapport', titleAttribute: 'nomObjet')
                             ->default(3)
-                            // ->disabled() // on ne veut pas que l'utilisateur le modifie
                             ->label('Objet')
+                            ->disabled()
                             ->searchable()
-                            ->preload(),            
+                            ->preload()
+                            ->dehydrated(true),
+                                        
                       
                         Forms\Components\Hidden::make('demande_id')
                             ->dehydrated(true),
-                        Forms\Components\Select::make('site')
-                            // ->multiple()
-                            ->relationship(titleAttribute: 'nomSite')
-                            ->options(
-                                function (){
-                                    return auth()->user()->site()->pluck('nomSite','id');  
-                                }
-                            )
-                            ->preload(),
-                    
-                        Forms\Components\Select::make('activite_id')
-                            ->relationship(name: 'Activite', titleAttribute: 'nomActivite')
-                            ->label('Activité')
-                            ->searchable()
-                            ->preload(), 
+                        
                         FileUpload::make('url')
                             ->panelLayout('grid')
                             ->multiple()
@@ -149,40 +157,34 @@ class DemandeVoitureResource extends Resource
                 ->tooltip('Télécharger le fichier')
                 ->toggleable(isToggledHiddenByDefault: true),
 
+                // Tables\Columns\TextColumn::make('statut')
+                // ->icon(fn(string $state):string=>match($state){
+                //     'en_attente'=>'heroicon-o-clock',
+                //     'valide'=>'heroicon-o-check-circle',
+                //     'revision'=>'heroicon-o-pencil',
+                // })
+                // ->color(
+                //     fn(string $state):string=>match($state){
+                //         'en_attente'=>'gray',
+                //         'valide'=>'success',
+                //         'revision'=>'info',
+                //     }
+                // ),
                 Tables\Columns\TextColumn::make('statut')
-                ->icon(fn(string $state):string=>match($state){
-                    'en_attente'=>'heroicon-o-clock',
-                    'valide'=>'heroicon-o-check-circle',
-                    'revision'=>'heroicon-o-pencil',
-                })
-                ->color(
-                    fn(string $state):string=>match($state){
-                        'en_attente'=>'gray',
-                        'valide'=>'success',
-                        'revision'=>'info',
-                    }
-                ),
-                Tables\Columns\TextColumn::make('ObjetDemande.nomObjet')
-                    ->sortable()
-                    ->searchable(),
-
-
-                Tables\Columns\TextColumn::make('user.name')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-                Tables\Columns\TextColumn::make('user.poste.nomPoste')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
-
-
-                Tables\Columns\TextColumn::make('activite.nomActivite')
-                    ->numeric()
-                    ->searchable(),
-
-                Tables\Columns\TextColumn::make('site.nomSite')
-                    ->numeric()
-                    ->searchable(),
+                    ->icon(fn(string $state):string=>match($state){
+                        'en_attente'=>'heroicon-o-clock',
+                        'valide'=>'heroicon-o-check-circle',
+                        'revision'=>'heroicon-o-pencil',
+                        'changer'=>'heroicon-o-wrench-screwdriver',                    })
+                    ->color(
+                        fn(string $state):string=>match($state){
+                            'en_attente'=>'gray',
+                            'valide'=>'success',
+                            'revision'=>'danger',
+                            'changer'=>'info',
+                        }
+                    )
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),

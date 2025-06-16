@@ -16,7 +16,11 @@ return new class extends Migration
             $table->string('titre');
             $table->json('url')->nullable();
             $table->json('motifSpecial')->nullable();
-            $table->enum('statut',['en_attente','valide'])->default('en_attente');
+            $table->json('motifVoitureRevision')->nullable();
+            $table->string('voitureCommentaire')->nullable();
+
+            $table->enum('statut',['en_attente','valide','revision','changer'])->default('en_attente');
+
             $table->boolean('sortie')->default(false);    
 
 

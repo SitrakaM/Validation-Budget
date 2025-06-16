@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Auth;
 
 
 
@@ -17,13 +18,16 @@ class Demande extends Model
     use HasFactory;
     protected $casts = [
         'url' => 'array',
-        'motifSpecial' => 'array'
+        'motifSpecial' => 'array',
+        'motifVoitureRevision' => 'array'
     ];
     protected $fillable=[
         "titre",
         "url",
         "motifSpecial",
         "statut",
+        "voitureCommentaire",
+        "motifVoitureRevision",
         "sortie",
         "objet_demande_id",
         "user_id",
@@ -91,7 +95,14 @@ class Demande extends Model
                     }
                 }
             }
-            
+            if ($demande->wasChanged() && auth()->user()->role?->nomRole === 'Budget') {
+                // On parcourt chaque enregistrement de la table pivot
+                    // dd($demande->statut);
+                    if ($demande->statut === 'revision') {
+                        // $demande->statut === 'changer';
+                        $demande->update(['statut'=>'changer']);
+                    }
+            }
 
             if($demande->wasChanged('statut') && $demande->statut === 'valide'){
                 $demande->userValidationDemande()->detach();

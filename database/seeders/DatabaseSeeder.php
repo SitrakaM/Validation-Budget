@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             RoleSeeder::class,
             AdminSeeder::class,
             PosteSeeder::class,
+            ActiviteSeeder::class,
             SiteSeeder::class,
             ObjetDemandeSeeder::class,
             ObjetRapportSeeder::class,

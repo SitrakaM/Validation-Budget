@@ -49,7 +49,6 @@ class UserResource extends Resource
                     ->label('Role')
                     ->searchable()
                     ->preload(), 
-
                 Forms\Components\Select::make('site')
                     ->multiple()
                     ->relationship(titleAttribute: 'nomSite')
@@ -65,9 +64,7 @@ class UserResource extends Resource
                     ->searchable(),
                 Tables\Columns\TextColumn::make('email')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('email_verified_at')
-                    ->dateTime()
-                    ->sortable(),
+              
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable()
@@ -76,15 +73,12 @@ class UserResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
-                Tables\Columns\TextColumn::make('poste_id')
-                    ->numeric()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('Poste.nomPoste')
+                    ->numeric(),
                 Tables\Columns\SelectColumn::make('role_id')
-                    // ->numeric()
                     ->options(
                         Role::pluck('nomRole','id')->toArray()
-                    )
-                    ->sortable(),
+                    ),
             ])
             ->filters([
                 //

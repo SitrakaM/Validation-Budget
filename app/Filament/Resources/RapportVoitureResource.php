@@ -177,6 +177,6 @@ class RapportVoitureResource extends Resource
     {
         $user = Filament::auth()->user();                   
 
-        return in_array($user->role?->nomRole, ['Admin', 'Validateur','ValidateurRapport','Special','Simple','Budget']);
+        return in_array($user->role?->nomRole, ['Admin','Special','Budget']);
     }
 }
