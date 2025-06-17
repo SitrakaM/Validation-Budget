@@ -22,7 +22,8 @@ class ValidationRapportResource extends Resource
     protected static ?string $model = ValidationRapport::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
+    // protected static ?string $navigationGroup = 'Validation';
+    protected static ?string $navigationLabel = 'Rapport';
     public static function form(Form $form): Form
     {
         return $form
@@ -56,7 +57,13 @@ class ValidationRapportResource extends Resource
                     ->downloadable()
                     ->directory('Revision/Rapport')
                     ->visibility('public')
-                    ->preserveFilenames()
+                    ->preserveFilenames()->getUploadedFileNameForStorageUsing(function ($file) {
+                        $name = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                        $extension = $file->getClientOriginalExtension();
+                        $timestamp = now()->format('Y-m-d_H-i-s');
+                
+                        return $name . '_' . $timestamp . '.' . $extension;
+                    })
                     ->required(
                         fn(Callable $get)=>$get('estValid') ==='revision' && empty($get('commentaire'))
                     )

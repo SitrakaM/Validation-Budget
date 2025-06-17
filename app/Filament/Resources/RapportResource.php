@@ -28,7 +28,8 @@ class RapportResource extends Resource
     protected static ?string $model = Rapport::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
+    // protected static ?string $navigationGroup = 'Nouvelle';
+    protected static ?string $navigationLabel = 'Rapport';
     public static function form(Form $form): Form
     {
         return $form
@@ -121,9 +122,8 @@ class RapportResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
-                Action::make('delete')
-                    ->requiresConfirmation()
-                    ->action(fn (Post $record) => $record->delete())
+                Tables\Actions\DeleteAction::make(),
+
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -143,9 +143,9 @@ class RapportResource extends Resource
     {
         return [
             'index' => Pages\ListRapports::route('/'),
-            'create' => Pages\CreateRapport::route('/create'),
-            'view' => Pages\ViewRapport::route('/{record}'),
-            'edit' => Pages\EditRapport::route('/{record}/edit'),
+            // 'create' => Pages\CreateRapport::route('/create'),
+            // 'view' => Pages\ViewRapport::route('/{record}'),
+            // 'edit' => Pages\EditRapport::route('/{record}/edit'),
         ];
     }
 

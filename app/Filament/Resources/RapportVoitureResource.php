@@ -27,9 +27,11 @@ class RapportVoitureResource extends Resource
     protected static ?string $model = Rapport::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static ?string $label = 'Rapport voiture';
+    // protected static ?string $label = 'Rapport voiture';
     protected static ?string $pluralLabel = 'Rapport voitures';
     protected static ?string $slug = 'Rapport voiture'; // ou un slug unique
+    protected static ?string $navigationGroup = 'Voiture';
+    protected static ?string $navigationLabel = 'Rapport';
 
     public static function form(Form $form): Form
     {
@@ -63,7 +65,13 @@ class RapportVoitureResource extends Resource
                     ->downloadable()
                     ->directory('Rapport')
                     ->visibility('public')
-                    ->preserveFilenames(),
+                    ->preserveFilenames()->getUploadedFileNameForStorageUsing(function ($file) {
+                        $name = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                        $extension = $file->getClientOriginalExtension();
+                        $timestamp = now()->format('Y-m-d_H-i-s');
+                
+                        return $name . '_' . $timestamp . '.' . $extension;
+                    }),
               
             ]);
     }

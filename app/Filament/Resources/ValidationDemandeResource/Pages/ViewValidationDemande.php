@@ -13,7 +13,9 @@ class ViewValidationDemande extends ViewRecord
     protected function getHeaderActions(): array
     {
         return [
-            Actions\EditAction::make(),
+            Actions\EditAction::make('intervenir') // <-- Nouveau nom de l'action
+            ->label('Intervenir')                    // <-- Texte affiché dans le bouton
+            ->icon('heroicon-o-wrench') ,
         ];
     }
 }

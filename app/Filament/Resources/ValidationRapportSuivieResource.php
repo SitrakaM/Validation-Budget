@@ -22,10 +22,11 @@ class ValidationRapportSuivieResource extends Resource
     protected static ?string $model = ValidationRapport::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static ?string $label = 'Suivie rapport';
+    // protected static ?string $label = 'Suivie rapport';
     protected static ?string $pluralLabel = 'Suivie rapports';
     protected static ?string $slug = 'Suivie rapport'; // ou un slug unique
-    
+    protected static ?string $navigationGroup = 'Suivie Validation';
+    protected static ?string $navigationLabel = 'Rapport';
 
     public static function form(Form $form): Form
     {
@@ -160,6 +161,6 @@ class ValidationRapportSuivieResource extends Resource
     {
         $user = Filament::auth()->user();                   
 
-        return in_array($user->role?->nomRole, ['Admin','ValidateurRapport','Simple']);
+        return in_array($user->role?->nomRole, ['Admin','ValidateurRapport','Validateur','Simple']);
     }
 }

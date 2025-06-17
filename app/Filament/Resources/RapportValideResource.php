@@ -27,9 +27,11 @@ class RapportValideResource extends Resource
     protected static ?string $model = Rapport::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static ?string $label = 'Rapport valide';
+    // protected static ?string $label = 'Rapport valide';
     protected static ?string $pluralLabel = 'Rapport valides';
     protected static ?string $slug = 'Rapport valide'; // ou un slug unique
+    protected static ?string $navigationGroup = 'Valide';
+    protected static ?string $navigationLabel = 'Rapport';
 
     public static function form(Form $form): Form
     {
@@ -63,7 +65,13 @@ class RapportValideResource extends Resource
                     ->downloadable()
                     ->directory('Rapport')
                     ->visibility('public')
-                    ->preserveFilenames(),
+                    ->preserveFilenames()->getUploadedFileNameForStorageUsing(function ($file) {
+                        $name = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                        $extension = $file->getClientOriginalExtension();
+                        $timestamp = now()->format('Y-m-d_H-i-s');
+                
+                        return $name . '_' . $timestamp . '.' . $extension;
+                    }),
               
             ]);
     }

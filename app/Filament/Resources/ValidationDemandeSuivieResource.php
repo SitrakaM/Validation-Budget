@@ -20,10 +20,11 @@ class ValidationDemandeSuivieResource extends Resource
     protected static ?string $model = ValidationDemande::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static ?string $label = 'Suivie demande';
+    // protected static ?string $label = 'Suivie demande';
     protected static ?string $pluralLabel = 'Suivie demandes';
     protected static ?string $slug = 'Suivie demande'; // ou un slug unique
-
+    protected static ?string $navigationGroup = 'Suivie Validation';
+    protected static ?string $navigationLabel = 'Demande';
     public static function form(Form $form): Form
     {
         return $form

@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\DemandeValideResource\Pages;
 use App\Filament\Resources\DemandeValideResource\RelationManagers;
 use App\Models\Demande;
+use App\Models\Poste;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -21,6 +22,10 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Actions\Action;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Auth;
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Filters\Filter;
 
 
 
@@ -29,9 +34,11 @@ class DemandeValideResource extends Resource
     protected static ?string $model = Demande::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static ?string $label = 'Demande valide';
+    // protected static ?string $label = 'Demande valide';
     protected static ?string $pluralLabel = 'Demande valides';
     protected static ?string $slug = 'Demande valide'; // ou un slug unique
+    protected static ?string $navigationGroup = 'Valide';
+    protected static ?string $navigationLabel = 'Demande';
 
     public static function form(Form $form): Form
     {
@@ -128,7 +135,7 @@ class DemandeValideResource extends Resource
                 Forms\Components\TextInput::make('titre')
                     ->required()
                     ->maxLength(255),
-                    Forms\Components\Select::make('site')
+                Forms\Components\Select::make('site')
                     // ->multiple()
                     ->relationship(titleAttribute: 'nomSite')
                     ->options(
@@ -196,6 +203,17 @@ class DemandeValideResource extends Resource
     {
         return $table
             ->columns([
+                // ToggleColumn::make('sortie')
+                //     ->visible(fn () => in_array(Auth::user()?->role->nomRole,['Budget']))
+                //     ,
+                    
+                Tables\Columns\IconColumn::make('sortie')
+                    ->boolean()
+                    ->sortable()
+                    ->visible(fn () => in_array(Auth::user()?->role->nomRole,['Budget'])),
+                
+
+
                 Tables\Columns\TextColumn::make('titre')
                     ->searchable(),
                 IconColumn::make('url')  
@@ -222,64 +240,108 @@ class DemandeValideResource extends Resource
                         'revision'=>'info',
                     }
                 ),
-                Tables\Columns\TextColumn::make('ObjetDemande.nomObjet')
-                    ->sortable()
-                    ->searchable(),
+                // Tables\Columns\TextColumn::make('ObjetDemande.nomObjet')
+                //     ->sortable()
+                //     ->searchable()
+                //     ->toggleable(isToggledHiddenByDefault: true),
+
 
 
                 Tables\Columns\TextColumn::make('user.name')
-                    ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->searchable(),
 
                 Tables\Columns\TextColumn::make('user.poste.nomPoste')
                     ->searchable()
                     ->toggleable(isToggledHiddenByDefault: true),
 
 
-                Tables\Columns\TextColumn::make('activite.nomActivite')
-                    ->numeric()
-                    ->searchable(),
+                // Tables\Columns\TextColumn::make('activite.nomActivite')
+                //     ->numeric()
+                //     ->searchable()
+                //     ->toggleable(isToggledHiddenByDefault: true),
 
-                Tables\Columns\TextColumn::make('site.nomSite')
-                    ->numeric()
-                    ->searchable(),
+
+                // Tables\Columns\TextColumn::make('site.nomSite')
+                //     ->numeric()
+                //     ->searchable()
+                //     ->toggleable(isToggledHiddenByDefault: true),
+                    
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()
                     ->sortable(),
-                    // ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
-            ])
+                
+                SelectFilter::make('ObjetDemande')
+                    ->label('Objet')
+                    ->relationship('ObjetDemande', 'nomObjet')
+                    ->searchable()
+                    ->preload()
+                    ->visible(),
+                SelectFilter::make('Site')
+                    ->label('Site')
+                    ->relationship('Site', 'nomSite')
+                    ->searchable()
+                    ->preload(),
+                
+                SelectFilter::make('Activite')
+                    ->label('Activité')
+                    ->relationship('Activite', 'nomActivite')
+                    ->searchable()
+                    ->preload(),
+                SelectFilter::make('Poste')
+                    ->options(Poste::all()->pluck('nomPoste', 'id'))
+                    ->label('Poste')
+                    ->searchable()
+                    ->preload()
+                    ->visible(fn () => !in_array(Auth::user()?->role->nomRole,['Simple'])), 
+                Filter::make('created_at')
+                
+                    ->form([
+                        DatePicker::make('created_from')->label('Créer en')
+                        ,
+                        DatePicker::make('created_until')->label('Jusqu\'à')
+                        ,
+                    ])
+
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['created_from'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                            )
+                            ->when(
+                                $data['created_until'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                            );
+                    })->columnSpan(2)->columns(2)
+
+            ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)
+
             ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\ViewAction::make()->label('Afficher'),
+                // Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    // Tables\Actions\DeleteBulkAction::make(),
                 ]),
             ]);
     }
 
-    public static function getRelations(): array
-    {
-        return [
-            //
-        ];
-    }
+ 
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListDemandeValides::route('/'),
-            'create' => Pages\CreateDemandeValide::route('/create'),
+            // 'create' => Pages\CreateDemandeValide::route('/create'),
             'view' => Pages\ViewDemandeValide::route('/{record}'),
-            'edit' => Pages\EditDemandeValide::route('/{record}/edit'),
+            // 'edit' => Pages\EditDemandeValide::route('/{record}/edit'),
         ];
     }
    

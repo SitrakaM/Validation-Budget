@@ -10,7 +10,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 
 class User extends Authenticatable
 {
@@ -89,5 +90,8 @@ class User extends Authenticatable
                     ->using(ValidationRapport::class)
                     ->withPivot('estValid')
                     ->withTimestamps();
+    }
+    public function canAccessPanel(Panel $panel):bool{
+        return true;
     }
 }

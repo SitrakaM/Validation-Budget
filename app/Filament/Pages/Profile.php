@@ -7,6 +7,7 @@ use Filament\Pages\Page;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Illuminate\Support\Facades\Auth;
 use Filament\Notifications\Notification;
+use App\Models\Site;
 
 class Profile extends Page implements Forms\Contracts\HasForms
 {
@@ -14,10 +15,12 @@ class Profile extends Page implements Forms\Contracts\HasForms
 
     protected static ?string $navigationIcon = 'heroicon-o-user-circle';
     protected static string $view = 'filament.pages.profile';
-    protected static ?string $navigationGroup = 'Paramètres'; // facultatif
+    // protected static ?string $navigationGroup = 'Paramètres'; // facultatif
 
     public $name;
     public $email;
+    public $password;
+
 
     public function mount(): void
     {
@@ -25,14 +28,26 @@ class Profile extends Page implements Forms\Contracts\HasForms
         $this->form->fill([
             'name' => $user->name,
             'email' => $user->email,
+            'password' => $user->password,
         ]);
     }
 
     protected function getFormSchema(): array
     {
         return [
-            Forms\Components\TextInput::make('name')->required(),
-            Forms\Components\TextInput::make('email')->email()->required(),
+            // Forms\Components\TextInput::make('name')->required(),
+            // Forms\Components\TextInput::make('email')->email()->required(),
+            Forms\Components\TextInput::make('name')
+            ->required()
+            ->maxLength(255),
+        Forms\Components\TextInput::make('email')
+            ->email()
+            ->required()
+            ->maxLength(255),
+        Forms\Components\TextInput::make('password')
+            ->password()
+            ->required()
+            ->maxLength(255),
         ];
     }
 

@@ -19,7 +19,8 @@ class PosteResource extends Resource
     protected static ?string $model = Poste::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
+    protected static ?string $navigationGroup = 'Option';
+    protected static ?string $navigationLabel = 'Poste';
     public static function form(Form $form): Form
     {
         return $form

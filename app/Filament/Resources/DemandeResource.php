@@ -30,8 +30,9 @@ class DemandeResource extends Resource
     protected static ?string $model = Demande::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-    protected static ?string $label = 'Demande';
     protected static ?string $pluralLabel = 'Demande';
+    // protected static ?string $navigationGroup = 'Nouvelle';
+    protected static ?string $navigationLabel = 'Demande';
 
     public static function form(Form $form): Form
     {
@@ -91,8 +92,13 @@ class DemandeResource extends Resource
                 ->visibility('public')
                 ->preserveFilenames()
                 ->columnSpanFull()
-                ->required()
-                ,
+                ->required()->getUploadedFileNameForStorageUsing(function ($file) {
+                    $name = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                    $extension = $file->getClientOriginalExtension();
+                    $timestamp = now()->format('Y-m-d_H-i-s');
+            
+                    return $name . '_' . $timestamp . '.' . $extension;
+                }),
             
             Forms\Components\Hidden::make('user_id')
                 ->default(auth()->id())
@@ -152,7 +158,13 @@ class DemandeResource extends Resource
                         ->directory('Rapport')
                         ->visibility('public')
                         ->preserveFilenames()
-                        ->required()
+                        ->required()->getUploadedFileNameForStorageUsing(function ($file) {
+                            $name = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+                            $extension = $file->getClientOriginalExtension();
+                            $timestamp = now()->format('Y-m-d_H-i-s');
+                    
+                            return $name . '_' . $timestamp . '.' . $extension;
+                        })
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('statut')
                         ->hidden()
@@ -167,7 +179,9 @@ class DemandeResource extends Resource
                 ->disabled(fn () => in_array(Auth::user()?->role->nomRole,['Special','Budget','Validateur','ValidateurRapport']))
                 ->columns(2)
                 ->columnSpanFull()
-                ->createItemButtonLabel('Ajouter un rapport'),
+                ->createItemButtonLabel('Ajouter un rapport')                    
+                ->collapsible(),
+
           
                 
             Forms\Components\Section::make('VALIDATION SPECIAL')
@@ -325,6 +339,7 @@ class DemandeResource extends Resource
         return in_array($user->role?->nomRole, ['Admin','Special','Simple']);
     }
 
-   
+
+
    
 }

@@ -20,7 +20,8 @@ class ActiviteResource extends Resource
     protected static ?string $model = Activite::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
-
+    protected static ?string $navigationGroup = 'Option';
+    protected static ?string $navigationLabel = 'Activité';
     public static function form(Form $form): Form
     {
         return $form
