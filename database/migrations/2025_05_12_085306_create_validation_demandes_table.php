@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('commentaire')->nullable();
             $table->json('motifRetour')->nullable();
             $table->enum('estValid',['en_attente','revision','valide','changer'])->default('en_attente');    
+            $table->boolean('is_new')->default(true);    
 
             $table->foreignIdFor(\App\Models\User::class)->constrained()->cascadeOnDelete();
             $table->foreignIdFor(\App\Models\Demande::class)->constrained()->cascadeOnDelete();

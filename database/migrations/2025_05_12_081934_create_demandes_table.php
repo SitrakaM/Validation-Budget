@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('voitureCommentaire')->nullable();
 
             $table->enum('statut',['en_attente','valide','revision','changer'])->default('en_attente');
+            $table->boolean('is_new')->default(true);    
 
             $table->boolean('sortie')->default(false);    
 

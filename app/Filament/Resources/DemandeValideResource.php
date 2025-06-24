@@ -22,6 +22,7 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Actions\Action;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Auth;
+
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Enums\FiltersLayout;
 use Filament\Forms\Components\DatePicker;
@@ -33,7 +34,7 @@ class DemandeValideResource extends Resource
 {
     protected static ?string $model = Demande::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document-check';
     // protected static ?string $label = 'Demande valide';
     protected static ?string $pluralLabel = 'Demande valides';
     protected static ?string $slug = 'Demande valide'; // ou un slug unique
@@ -93,7 +94,7 @@ class DemandeValideResource extends Resource
             ->preload(), 
 
         FileUpload::make('url')
-            ->label('Joindre une fichier')
+            ->label('Fichier attacher')
             ->downloadable()
             ->directory('Demande')
             ->visibility('public')
@@ -152,7 +153,7 @@ class DemandeValideResource extends Resource
                     ->searchable()
                     ->preload(), 
                 FileUpload::make('url')
-                    ->label('Joindre des fichiers')
+                    ->label('Fichier attacher')
                     ->panelLayout('grid')
                     ->multiple()
                     ->downloadable()
@@ -203,29 +204,25 @@ class DemandeValideResource extends Resource
     {
         return $table
             ->columns([
-                // ToggleColumn::make('sortie')
-                //     ->visible(fn () => in_array(Auth::user()?->role->nomRole,['Budget']))
-                //     ,
-                    
-                Tables\Columns\IconColumn::make('sortie')
-                    ->boolean()
+                ToggleColumn::make('sortie')
                     ->sortable()
-                    ->visible(fn () => in_array(Auth::user()?->role->nomRole,['Budget'])),
-                
-
+                    ->disabled(function ($record){
+                        if(Auth::user()?->role->nomRole != 'Budget'){
+                            return true;
+                        }else{
+                            if($record->sortie === true){
+                                return true;
+                            }else{
+                                return false;
+                            }
+                        }
+                    } ),
+                    
 
                 Tables\Columns\TextColumn::make('titre')
                     ->searchable(),
-                IconColumn::make('url')  
-                ->icon('heroicon-o-arrow-down-tray')
-                ->label("Demande")             
-                ->url(fn ($record) => $record?->url 
-                    ? Storage::disk('public')->url($record?->url) 
-                    : null
-                )
-                ->openUrlInNewTab()
-                ->tooltip('Télécharger le fichier')
-                ->toggleable(isToggledHiddenByDefault: true),
+
+              
 
                 Tables\Columns\TextColumn::make('statut')
                 ->icon(fn(string $state):string=>match($state){
@@ -240,36 +237,44 @@ class DemandeValideResource extends Resource
                         'revision'=>'info',
                     }
                 ),
-                // Tables\Columns\TextColumn::make('ObjetDemande.nomObjet')
-                //     ->sortable()
-                //     ->searchable()
-                //     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('ObjetDemande.nomObjet')
+                    ->label('Objet')
+                    ->sortable(),
 
 
 
                 Tables\Columns\TextColumn::make('user.name')
+                    ->label('Identifiant')
+                    ->visible(fn () => !in_array(Auth::user()?->role->nomRole,['Simple']))
                     ->searchable(),
+                Tables\Columns\IconColumn::make('motifSpecial')
+                    ->boolean()
+                    ->sortable()
+                    ->icon('heroicon-o-paper-clip'),
+                    // ->visible(fn () => in_array(Auth::user()?->role->nomRole,['Budget'])),
+                
 
                 Tables\Columns\TextColumn::make('user.poste.nomPoste')
-                    ->searchable()
+                    ->visible(fn () => !in_array(Auth::user()?->role->nomRole,['Simple']))
                     ->toggleable(isToggledHiddenByDefault: true),
 
 
-                // Tables\Columns\TextColumn::make('activite.nomActivite')
-                //     ->numeric()
-                //     ->searchable()
-                //     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('activite.nomActivite')
+                    ->numeric()
+                    ->toggleable(isToggledHiddenByDefault: true),
 
 
-                // Tables\Columns\TextColumn::make('site.nomSite')
-                //     ->numeric()
-                //     ->searchable()
-                //     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('site.nomSite')
+                    ->numeric()
+                    ->toggleable(isToggledHiddenByDefault: true),
                     
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Créé le')
                     ->dateTime()
                     ->sortable(),
+                    // ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Mis à jour le')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
@@ -340,7 +345,7 @@ class DemandeValideResource extends Resource
         return [
             'index' => Pages\ListDemandeValides::route('/'),
             // 'create' => Pages\CreateDemandeValide::route('/create'),
-            'view' => Pages\ViewDemandeValide::route('/{record}'),
+            // 'view' => Pages\ViewDemandeValide::route('/{record}'),
             // 'edit' => Pages\EditDemandeValide::route('/{record}/edit'),
         ];
     }
@@ -362,6 +367,15 @@ class DemandeValideResource extends Resource
 
         return in_array($user->role?->nomRole, ['Admin', 'Validateur','ValidateurRapport','Special','Simple','Budget']);
     }
-   
+    public static function getNavigationBadge(): ?string
+        {
+            if (auth()->user()->role?->nomRole === 'Simple') {
+                return static::getModel()::where('user_id', auth()->id())->where('statut', 'valide')->count();    
+            }else{
+                return static::getModel()::where('statut', 'valide')->count();    
+            }
+        }
+        
+
    
 }

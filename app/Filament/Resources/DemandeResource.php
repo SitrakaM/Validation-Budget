@@ -21,6 +21,12 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Actions\Action;
 use Filament\Facades\Filament;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Poste;
+
+use Filament\Tables\Filters\SelectFilter;
+use Filament\Tables\Enums\FiltersLayout;
+use Filament\Forms\Components\DatePicker;
+use Filament\Tables\Filters\Filter;
 
 
 
@@ -29,19 +35,16 @@ class DemandeResource extends Resource
 {
     protected static ?string $model = Demande::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-document-plus';
     protected static ?string $pluralLabel = 'Demande';
     // protected static ?string $navigationGroup = 'Nouvelle';
-    protected static ?string $navigationLabel = 'Demande';
+    protected static ?string $navigationLabel = 'Nouvelle Demande';
 
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
 
-
-
-    
             Forms\Components\Section::make('DEMANDE')
             ->schema([
 
@@ -73,7 +76,14 @@ class DemandeResource extends Resource
                 ->relationship(titleAttribute: 'nomSite')
                 ->options(
                     function (){
-                        return auth()->user()->site()->pluck('nomSite','id');  
+                        $allSite= auth()->user()->site()->pluck('nomSite','id');
+                        if(($allSite->isNotEmpty()) && in_array(Auth::user()?->role->nomRole,['Simple'])){
+                            return auth()->user()->site()->pluck('nomSite','id'); 
+                        }else{
+                          
+                            return \App\Models\Site::query()
+                            ->pluck('nomSite', 'id');
+                        }
                     }
                 )
                 ->required()
@@ -111,7 +121,7 @@ class DemandeResource extends Resource
                
             
                 HasManyRepeater::make('rapport')
-                ->label('ATTACHEMENT DES RAPPORTS')
+                ->label(fn () => in_array(Auth::user()?->role->nomRole,['Simple']) ? 'ATTACHEMENT DES RAPPORTS' : 'RAPPORT ATTACHER')
                 ->relationship('rapport')
                 ->schema([
                     Forms\Components\Select::make('objet_rapport_id')
@@ -138,7 +148,14 @@ class DemandeResource extends Resource
                         ->relationship(titleAttribute: 'nomSite')
                         ->options(
                             function (){
-                                return auth()->user()->site()->pluck('nomSite','id');  
+                                $allSite= auth()->user()->site()->pluck('nomSite','id');
+                            if(($allSite->isNotEmpty()) && in_array(Auth::user()?->role->nomRole,['Simple'])){
+                            return auth()->user()->site()->pluck('nomSite','id'); 
+                                }else{
+                                  
+                                    return \App\Models\Site::query()
+                                    ->pluck('nomSite', 'id');
+                                }
                             }
                         )                        
                         ->required()
@@ -231,18 +248,9 @@ class DemandeResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('titre')
                     ->searchable(),
-                IconColumn::make('url')  
-                ->icon('heroicon-o-arrow-down-tray')
-                ->label("Demande")             
-                ->url(fn ($record) => $record?->url 
-                    ? Storage::disk('public')->url($record?->url) 
-                    : null
-                )
-                ->openUrlInNewTab()
-                ->tooltip('Télécharger le fichier')
-                ->toggleable(isToggledHiddenByDefault: true),
-
+           
                 Tables\Columns\TextColumn::make('statut')
+                ->label('Status')
                 ->icon(fn(string $state):string=>match($state){
                     'en_attente'=>'heroicon-o-clock',
                     'valide'=>'heroicon-o-check-circle',
@@ -256,45 +264,96 @@ class DemandeResource extends Resource
                     }
                 ),
                 Tables\Columns\TextColumn::make('ObjetDemande.nomObjet')
-                    ->sortable()
-                    ->searchable(),
+                    ->label('Objet')
+                    ->sortable(),
 
 
                 Tables\Columns\TextColumn::make('user.name')
+                    ->label('Identifiant')
                     ->searchable()
-                    ->toggleable(isToggledHiddenByDefault: true),
+                    ->visible(fn () => !in_array(Auth::user()?->role->nomRole,['Simple'])),
 
                 Tables\Columns\TextColumn::make('user.poste.nomPoste')
-                    ->searchable()
+                    ->visible(fn () => !in_array(Auth::user()?->role->nomRole,['Simple']))
                     ->toggleable(isToggledHiddenByDefault: true),
 
 
                 Tables\Columns\TextColumn::make('activite.nomActivite')
                     ->numeric()
-                    ->searchable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
 
                 Tables\Columns\TextColumn::make('site.nomSite')
                     ->numeric()
-                    ->searchable(),
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('created_at')
+                    ->label('Créé le')
                     ->dateTime()
                     ->sortable(),
                     // ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('updated_at')
+                    ->label('Mis à jour le')
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
-            ])
+                SelectFilter::make('ObjetDemande')
+                ->label('Objet')
+                ->relationship('ObjetDemande', 'nomObjet')
+                ->searchable()
+                ->preload()
+                ->visible(),
+            SelectFilter::make('Site')
+                    ->label('Site')
+                    ->relationship('Site', 'nomSite')
+                    ->searchable()
+                    ->preload(),
+                
+            SelectFilter::make('Activite')
+                    ->label('Activité')
+                    ->relationship('Activite', 'nomActivite')
+                    ->searchable()
+                    ->preload(),
+            SelectFilter::make('Poste')
+                    ->options(Poste::all()->pluck('nomPoste', 'id'))
+                    ->label('Poste')
+                    ->searchable()
+                    ->preload()
+                    ->visible(fn () => !in_array(Auth::user()?->role->nomRole,['Simple'])), 
+            Filter::make('created_at')
+            
+                ->form([
+                    DatePicker::make('created_from')->label('Créer en')
+                    ,
+                    DatePicker::make('created_until')->label('Jusqu\'à')
+                    ,
+                ])
+
+                ->query(function (Builder $query, array $data): Builder {
+                    return $query
+                        ->when(
+                            $data['created_from'],
+                            fn (Builder $query, $date): Builder => $query->whereDate('created_at', '>=', $date),
+                        )
+                        ->when(
+                            $data['created_until'],
+                            fn (Builder $query, $date): Builder => $query->whereDate('created_at', '<=', $date),
+                        );
+                })->columnSpan(2)->columns(2)
+
+        ], layout: FiltersLayout::AboveContent)->filtersFormColumns(3)
+
             ->actions([
                 Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make(),
+                Tables\Actions\EditAction::make()
+                    ->label(fn () => in_array(Auth::user()?->role->nomRole,['Simple']) ? 'Modifier' : 'Intervenir')
+                    ->icon(fn () => !in_array(Auth::user()?->role->nomRole,['Simple']) ? 'heroicon-o-wrench' : 'heroicon-o-pencil-square') 
+                    ,
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\DeleteBulkAction::make()
+                    ->visible(fn () => in_array(Auth::user()?->role->nomRole,['Simple'])),
                 ]),
             ]);
     }
@@ -311,8 +370,8 @@ class DemandeResource extends Resource
         return [
             'index' => Pages\ListDemandes::route('/'),
             'create' => Pages\CreateDemande::route('/create'),
-            'view' => Pages\ViewDemande::route('/{record}'),
-            'edit' => Pages\EditDemande::route('/{record}/edit'),
+            // 'view' => Pages\ViewDemande::route('/{record}'),
+            // 'edit' => Pages\EditDemande::route('/{record}/edit'),
         ];
     }
    
@@ -339,7 +398,15 @@ class DemandeResource extends Resource
         return in_array($user->role?->nomRole, ['Admin','Special','Simple']);
     }
 
-
+    public static function getNavigationBadge(): ?string
+    {
+        if (auth()->user()->role?->nomRole === 'Simple' || auth()->user()->role?->nomRole === 'Special') {
+            return static::getModel()::where('user_id', auth()->id())->whereNot('statut', 'valide')->count();    
+        }else{
+            return static::getModel()::whereNot('statut', 'valide')->count();    
+        }
+    }
+    
 
    
 }

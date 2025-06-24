@@ -16,7 +16,8 @@ return new class extends Migration
             $table->string('titre');
             $table->enum('statut',['en_attente','valide'])->default('en_attente');
             $table->json('url')->nullable();
-          
+            $table->boolean('is_new')->default(true);    
+
             $table->foreignIdFor(\App\Models\ObjetRapport::class)->nullable()->constrained()->cascadeOnDelete();
             $table->foreignIdFor(\App\Models\Demande::class)->nullable()->constrained()->cascadeOnDelete();
             $table->foreignIdFor(\App\Models\Activite::class)->nullable()->constrained()->cascadeOnDelete();

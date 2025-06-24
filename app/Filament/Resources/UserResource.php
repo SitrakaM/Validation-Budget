@@ -20,7 +20,10 @@ class UserResource extends Resource
 {
     protected static ?string $model = User::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationIcon = 'heroicon-o-user-group';
+    protected static ?string $pluralLabel = 'Utilisateurs';
+
+    protected static ?string $navigationLabel = 'Utilisateurs';
 
     public static function form(Form $form): Form
     {
@@ -76,6 +79,7 @@ class UserResource extends Resource
                 Tables\Columns\TextColumn::make('Poste.nomPoste')
                     ->numeric(),
                 Tables\Columns\SelectColumn::make('role_id')
+                    ->label('Role')
                     ->options(
                         Role::pluck('nomRole','id')->toArray()
                     ),
@@ -100,14 +104,15 @@ class UserResource extends Resource
             //
         ];
     }
+   
 
     public static function getPages(): array
     {
         return [
             'index' => Pages\ListUsers::route('/'),
-            'create' => Pages\CreateUser::route('/create'),
-            'view' => Pages\ViewUser::route('/{record}'),
-            'edit' => Pages\EditUser::route('/{record}/edit'),
+            // 'create' => Pages\CreateUser::route('/create'),
+            // 'view' => Pages\ViewUser::route('/{record}'),
+            // 'edit' => Pages\EditUser::route('/{record}/edit'),
         ];
     }
     
@@ -117,6 +122,10 @@ class UserResource extends Resource
 
         return in_array($user->role?->nomRole, ['Admin']);
     }
- 
+    public static function getNavigationBadge(): ?string
+    {
+            return static::getModel()::count();    
+       
+    }
 
 }

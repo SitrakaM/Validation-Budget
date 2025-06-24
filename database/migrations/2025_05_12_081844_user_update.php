@@ -15,6 +15,7 @@ return new class extends Migration
             
             $table->foreignIdFor(\App\Models\Poste::class)->nullable()->constrained()->cascadeOnDelete();
             $table->foreignIdFor(\App\Models\Role::class)->nullable()->constrained()->cascadeOnDelete();
+            $table->boolean('is_new')->default(true);    
 
         });
     }

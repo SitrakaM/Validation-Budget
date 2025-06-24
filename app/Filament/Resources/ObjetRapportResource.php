@@ -21,6 +21,7 @@ class ObjetRapportResource extends Resource
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
     protected static ?string $navigationGroup = 'Objet';
     protected static ?string $navigationLabel = 'Rapport';
+
     public static function form(Form $form): Form
     {
         return $form

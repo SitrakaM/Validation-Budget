@@ -19,6 +19,7 @@ return new class extends Migration
             $table->foreignIdFor(\App\Models\User::class)->nullable()->constrained()->cascadeOnDelete();
             $table->foreignIdFor(\App\Models\Rapport::class)->nullable()->constrained()->cascadeOnDelete();
             // $table->primary(['user_id','rapport_id']);
+            $table->boolean('is_new')->default(true);    
 
             $table->timestamps();
         });
