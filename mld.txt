@@ -1,0 +1,161 @@
+
+ENTITÉ: Type_demande
+TABLE: type_demandes
+
+ATTRIBUTS:
+- id (PK)
+- name : string | required
+- created_at
+- updated_at
+
+ENTITÉ: Site
+TABLE: sites
+
+ATTRIBUTS:
+- id (PK)
+- name : string | required
+- created_at
+- updated_at
+
+ENTITÉ: Activite
+TABLE: activites
+
+ATTRIBUTS:
+- id (PK)
+- name : string | required
+- created_at
+- updated_at
+
+ENTITÉ: Type_rapport
+TABLE: type_rapports
+
+ATTRIBUTS:
+- id (PK)
+- name : string | required
+- created_at
+- updated_at
+
+ENTITÉ: Role
+TABLE: roles
+
+ATTRIBUTS:
+- id (PK)
+- name : string | required
+- created_at
+- updated_at
+
+ENTITÉ: Poste
+TABLE: postes
+
+ATTRIBUTS:
+- id (PK)
+- name : string | required
+- created_at
+- updated_at
+
+ENTITÉ: Demande
+TABLE: demandes
+
+ATTRIBUTS:
+- id (PK)
+- fichier : json | required
+- statut : enum(Valide, refuse, en_cours, correction)
+- validated_by_special : boolean | default(false)
+- #id_type_demande
+- #id_site
+- #id_mission
+- created_at
+- updated_at
+
+ENTITÉ: Rapport
+TABLE: rapports
+
+ATTRIBUTS:
+- id (PK)
+- fichier : json | nullable
+- statut : enum(Valide, refuse, en_cours, correction)
+- physical : boolean | default(false)
+- #id_type_rapport
+- #id_mission
+- created_at
+- updated_at
+
+ENTITÉ: Mission
+TABLE: missions
+
+ATTRIBUTS:
+- id (PK)
+- description : text | nullable
+- #id_site
+- created_at
+- updated_at
+
+ENTITÉ: User
+TABLE: users
+
+ATTRIBUTS:
+- id (PK)
+- name : required
+- email : required
+- password : required
+- #id_poste
+- created_at
+- updated_at
+
+
+RELATION: Mission_User
+TABLE: mission_users
+
+ATTRIBUTS:
+- id (PK) (id_mission, id_user, scope)
+- scope : enum(Demande, Rapport, Both)
+- role_mission : enum(Responsable, member, observateur)
+- #id_mission (FK)
+- #id_user (FK)
+- added_at
+- updated_at
+
+RELATION: Mission_Activite
+TABLE: mission_activites
+
+ATTRIBUTS:
+- id (PK) (id_mission, id_activite)
+- #id_mission (FK)
+- #id_activite (FK)
+- created_at
+- updated_at
+
+RELATION: Demande_Activite
+TABLE: demande_activites
+
+ATTRIBUTS:
+- id (PK) (id_demande, id_activite)
+- #id_demande (FK)
+- #id_activite (FK)
+- created_at
+- updated_at
+
+RELATION: User_Role
+TABLE: user_roles
+
+ATTRIBUTS:
+- id (PK) (id_user, id_role)
+- #id_user (FK)
+- #id_role (FK)
+- created_at
+- updated_at
+
+ENTITÉ: Validation
+TABLE: validations
+
+ATTRIBUTS:
+- id (PK)
+- validable_type : // demande | rapport
+- validable_id : // id_demande | id_rapport
+- id_validateur (FK user)
+- decision : enum(valide | correction | rejete | en_cours)
+- motif_special : json | nullable
+- is_special : boolean | default(false)
+- commentaire : texte | nullable
+- fichier_commentaire : json | nullable
+- validated_at
